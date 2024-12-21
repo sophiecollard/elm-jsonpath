@@ -46,7 +46,7 @@ selector : Parser Selector
 selector =
     oneOf
         [ wildcard
-        , indices
+        , sliceOrIndices
         , keys
         ]
 
@@ -57,21 +57,65 @@ wildcard =
         |. symbol "*"
 
 
-indices : Parser Selector
-indices =
-    succeed Indices
-        |= int
+sliceOrIndices : Parser Selector
+sliceOrIndices =
+    oneOf
+        [ Parser.andThen sliceOrIndicesTail signedInt
+
+        -- Use a default start value of 0 if unspecified
+        , Parser.andThen sliceTail (oneOf [ signedInt, succeed 0 ])
+        ]
+
+
+sliceOrIndicesTail : Int -> Parser Selector
+sliceOrIndicesTail startOrHead =
+    oneOf
+        [ sliceTail startOrHead
+        , indicesTail startOrHead
+        ]
+
+
+sliceTail : Int -> Parser Selector
+sliceTail start =
+    succeed (\end step -> Slice { start = start, end = end, step = step })
+        |. symbol ":"
+        -- Use a default end value of Nothing if unspecified
+        -- Note that we cannot use -1 here, else the last element would not be included
+        |= oneOf
+            [ Parser.map Just signedInt
+            , succeed Nothing
+            ]
+        -- Use a default step value of 1 if unspecified
+        |= oneOf
+            [ succeed identity |. symbol ":" |= signedInt
+            , succeed 1
+            ]
+
+
+indicesTail : Int -> Parser Selector
+indicesTail head =
+    succeed (\tail -> Indices head tail)
         |= oneOf
             [ sequence
                 { start = ","
                 , separator = ","
                 , end = ""
-                , item = int
+                , item = signedInt
                 , spaces = spaces
                 , trailing = Forbidden
                 }
             , succeed []
             ]
+
+
+signedInt : Parser Int
+signedInt =
+    oneOf
+        [ succeed negate
+            |. symbol "-"
+            |= int
+        , int
+        ]
 
 
 keys : Parser Selector
