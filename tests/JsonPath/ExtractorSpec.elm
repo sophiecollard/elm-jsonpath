@@ -13,55 +13,55 @@ suite =
         [ describe "run method"
             [ test "should extract the root element" <|
                 \_ ->
-                    equal (JsonPath.Extractor.run "$" sampleJson) (Just sampleJson)
+                    equal (JsonPath.Extractor.run "$" sampleJson) (Ok sampleJson)
             , describe "should extract the elements in a path comprising a slice"
                 [ test "$.store.book[1:3]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1:3]" sampleJson)
-                            (Just (Json.Encode.list identity [ book1, book2 ]))
+                            (Ok (Json.Encode.list identity [ book1, book2 ]))
                 , test "$.store.book[2:]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[2:]" sampleJson)
-                            (Just (Json.Encode.list identity [ book2, book3 ]))
+                            (Ok (Json.Encode.list identity [ book2, book3 ]))
                 , test "$.store.book[-3:]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-3:]" sampleJson)
-                            (Just (Json.Encode.list identity [ book1, book2, book3 ]))
+                            (Ok (Json.Encode.list identity [ book1, book2, book3 ]))
                 , test "$.store.book[:].author" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[:].author" sampleJson)
-                            (Just (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
+                            (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
                 ]
             , describe "should extract the elements in a path comprising an index with a single value"
                 [ test "$.store.book[1]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1]" sampleJson)
-                            (Just book1)
+                            (Ok book1)
                 , test "$.store.book[-2].author" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2].author" sampleJson)
-                            (Just (Json.Encode.string "Herman Melville"))
+                            (Ok (Json.Encode.string "Herman Melville"))
                 ]
             , describe "should extract the elements in a path comprising an index with multiple values"
                 [ test "$.store.book[1,3]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1,3]" sampleJson)
-                            (Just (Json.Encode.list identity [ book1, book3 ]))
+                            (Ok (Json.Encode.list identity [ book1, book3 ]))
                 , test "$.store.book[-2,-1].author" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2,-1].title" sampleJson)
-                            (Just (Json.Encode.list Json.Encode.string [ "Moby Dick", "The Lord of the Rings" ]))
+                            (Ok (Json.Encode.list Json.Encode.string [ "Moby Dick", "The Lord of the Rings" ]))
                 ]
             , describe "should extract the elements in a path comprising a key with multiple values"
                 [ test "$.store.book[1][author,title]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1][author,title]" sampleJson)
-                            (Just (Json.Encode.list Json.Encode.string [ "Evelyn Waugh", "Sword of Honour" ]))
+                            (Ok (Json.Encode.list Json.Encode.string [ "Evelyn Waugh", "Sword of Honour" ]))
                 , test "$.store.book[-2,-1][author,title]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2,-1][author,title]" sampleJson)
-                            -- (Just (Json.Encode.list Json.Encode.string [ "Herman Melville", "Moby Dick", "J. R. R. Tolkien", "The Lord of the Rings" ]))
-                            (Just
+                            -- (Ok (Json.Encode.list Json.Encode.string [ "Herman Melville", "Moby Dick", "J. R. R. Tolkien", "The Lord of the Rings" ]))
+                            (Ok
                                 (Json.Encode.list identity
                                     [ Json.Encode.list Json.Encode.string [ "Herman Melville", "Moby Dick" ]
                                     , Json.Encode.list Json.Encode.string [ "J. R. R. Tolkien", "The Lord of the Rings" ]

@@ -1,32 +1,31 @@
 module JsonPath.Extractor exposing (extract, run)
 
-import Array
+import Array exposing (Array)
 import Json.Decode exposing (Value, decodeValue)
 import Json.Encode
-import JsonPath exposing (JsonPath, Selector(..))
+import JsonPath exposing (Error(..), JsonPath, Selector(..))
 import JsonPath.Parser exposing (jsonPath)
 import Parser
 
 
-run : String -> Value -> Maybe Value
+run : String -> Value -> Result Error Value
 run rawPath json =
     case Parser.run jsonPath rawPath of
         Ok path ->
             extract path json
 
-        Err _ ->
-            Nothing
+        Err err ->
+            Err (PathParsingError err)
 
 
-extract : JsonPath -> Value -> Maybe Value
+extract : JsonPath -> Value -> Result Error Value
 extract path json =
-    -- FIXME Return a Result with a meaningful error instead of a Maybe
     case path of
         [] ->
-            Just json
+            Ok json
 
         Wildcard :: _ ->
-            Nothing
+            Err NotImplemented
 
         (Slice { start, end, step }) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
@@ -41,51 +40,47 @@ extract path json =
                     in
                     slice
                         |> traverse (extract remainingSegments)
-                        |> Maybe.map (Json.Encode.list identity)
+                        |> Result.map (Json.Encode.list identity)
 
-                Err _ ->
-                    -- FIXME Return a helpful error
-                    Nothing
+                Err err ->
+                    Err (JsonDecodingError err)
 
         (Indices i []) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
-                    Maybe.andThen
+                    Result.andThen
                         (extract remainingSegments)
-                        (Array.get (toPositiveIndex (Array.length array) i) array)
+                        (i |> toPositiveIndex (Array.length array) |> getElementAt array)
 
-                Err _ ->
-                    -- FIXME Return a helpful error
-                    Nothing
+                Err err ->
+                    Err (JsonDecodingError err)
 
         (Indices i is) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
                     (i :: is)
                         |> List.map (toPositiveIndex (Array.length array))
-                        |> traverse (\j -> Array.get j array)
-                        |> Maybe.andThen (traverse (extract remainingSegments))
-                        |> Maybe.map (Json.Encode.list identity)
+                        |> traverse (getElementAt array)
+                        |> Result.andThen (traverse (extract remainingSegments))
+                        |> Result.map (Json.Encode.list identity)
 
-                Err _ ->
-                    -- FIXME Return a helpful error
-                    Nothing
+                Err err ->
+                    Err (JsonDecodingError err)
 
         (Keys k []) :: remainingSegments ->
             case decodeValue (Json.Decode.field k Json.Decode.value) json of
                 Ok remainingJson ->
                     extract remainingSegments remainingJson
 
-                Err _ ->
-                    -- FIXME Return a helpful error
-                    Nothing
+                Err err ->
+                    Err (JsonDecodingError err)
 
         (Keys k ks) :: remainingSegments ->
             -- FIXME Don't forget to flatten the output if necessary
             (k :: ks)
                 |> traverse (getValueAt json)
-                |> Maybe.andThen (traverse (extract remainingSegments))
-                |> Maybe.map (Json.Encode.list identity)
+                |> Result.andThen (traverse (extract remainingSegments))
+                |> Result.map (Json.Encode.list identity)
 
 
 toPositiveIndex : Int -> Int -> Int
@@ -97,33 +92,40 @@ toPositiveIndex length i =
         i
 
 
-getValueAt : Value -> String -> Maybe Value
+getElementAt : Array a -> Int -> Result Error a
+getElementAt array i =
+    array
+        |> Array.get i
+        |> Result.fromMaybe (IndexNotFound i)
+
+
+getValueAt : Value -> String -> Result Error Value
 getValueAt json key =
     json
         |> decodeValue (Json.Decode.field key Json.Decode.value)
-        |> Result.toMaybe
+        |> Result.mapError JsonDecodingError
 
 
-traverse : (a -> Maybe b) -> List a -> Maybe (List b)
+traverse : (a -> Result e b) -> List a -> Result e (List b)
 traverse f list =
     -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
     List.map f list |> sequence
 
 
-sequence : List (Maybe a) -> Maybe (List a)
+sequence : List (Result e a) -> Result e (List a)
 sequence list =
     -- Inspired by the sequence method on https://typelevel.org/cats/api/cats/Traverse.html
     let
-        loop : List a -> List (Maybe a) -> Maybe (List a)
+        loop : List a -> List (Result e a) -> Result e (List a)
         loop acc rem =
             case rem of
                 [] ->
-                    Just (List.reverse acc)
+                    Ok (List.reverse acc)
 
-                Nothing :: _ ->
-                    Nothing
+                (Err e) :: _ ->
+                    Err e
 
-                (Just a) :: nextRem ->
+                (Ok a) :: nextRem ->
                     loop (a :: acc) nextRem
     in
     loop [] list
