@@ -71,8 +71,7 @@ extract path json =
                     -- FIXME Return a helpful error
                     Nothing
 
-        (Keys k _) :: remainingSegments ->
-            -- FIXME Handle multiple keys
+        (Keys k []) :: remainingSegments ->
             case decodeValue (Json.Decode.field k Json.Decode.value) json of
                 Ok remainingJson ->
                     extract remainingSegments remainingJson
@@ -80,6 +79,13 @@ extract path json =
                 Err _ ->
                     -- FIXME Return a helpful error
                     Nothing
+
+        (Keys k ks) :: remainingSegments ->
+            -- FIXME Don't forget to flatten the output if necessary
+            (k :: ks)
+                |> traverse (getValueAt json)
+                |> Maybe.andThen (traverse (extract remainingSegments))
+                |> Maybe.map (Json.Encode.list identity)
 
 
 toPositiveIndex : Int -> Int -> Int
@@ -89,6 +95,13 @@ toPositiveIndex length i =
 
     else
         i
+
+
+getValueAt : Value -> String -> Maybe Value
+getValueAt json key =
+    json
+        |> decodeValue (Json.Decode.field key Json.Decode.value)
+        |> Result.toMaybe
 
 
 traverse : (a -> Maybe b) -> List a -> Maybe (List b)
