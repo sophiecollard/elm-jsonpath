@@ -47,13 +47,25 @@ extract path json =
                     -- FIXME Return a helpful error
                     Nothing
 
-        (Indices i _) :: remainingSegments ->
-            -- FIXME Handle multiple indices
+        (Indices i []) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
                     Maybe.andThen
-                        (\remainingJson -> extract remainingSegments remainingJson)
-                        (Array.get (toPositiveIndex i (Array.length array)) array)
+                        (extract remainingSegments)
+                        (Array.get (toPositiveIndex (Array.length array) i) array)
+
+                Err _ ->
+                    -- FIXME Return a helpful error
+                    Nothing
+
+        (Indices i is) :: remainingSegments ->
+            case decodeValue (Json.Decode.array Json.Decode.value) json of
+                Ok array ->
+                    (i :: is)
+                        |> List.map (toPositiveIndex (Array.length array))
+                        |> traverse (\j -> Array.get j array)
+                        |> Maybe.andThen (traverse (extract remainingSegments))
+                        |> Maybe.map (Json.Encode.list identity)
 
                 Err _ ->
                     -- FIXME Return a helpful error
@@ -71,7 +83,7 @@ extract path json =
 
 
 toPositiveIndex : Int -> Int -> Int
-toPositiveIndex i length =
+toPositiveIndex length i =
     if i < 0 then
         length + i
 
