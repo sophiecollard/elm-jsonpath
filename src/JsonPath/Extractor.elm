@@ -24,8 +24,15 @@ extract path json =
         [] ->
             Ok json
 
-        Wildcard :: _ ->
-            Err NotImplemented
+        Wildcard :: remainingSegments ->
+            case decodeValue (Json.Decode.list Json.Decode.value) json of
+                Ok list ->
+                    list
+                        |> traverse (extract remainingSegments)
+                        |> Result.map (Json.Encode.list identity)
+
+                Err err ->
+                    Err (JsonDecodingError err)
 
         (Slice { start, end, step }) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of

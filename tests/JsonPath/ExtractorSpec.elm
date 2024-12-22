@@ -14,7 +14,17 @@ suite =
             [ test "should extract the root element" <|
                 \_ ->
                     equal (JsonPath.Extractor.run "$" sampleJson) (Ok sampleJson)
-            , describe "should extract the elements in a path comprising a slice"
+            , describe "should extract the elements in a path comprising a wildcard"
+                [ test "$.store.book[*]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book[*]" sampleJson)
+                            (Ok (Json.Encode.list identity [ book0, book1, book2, book3 ]))
+                , test "$.store.book[*].author" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book[*].author" sampleJson)
+                            (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
+                ]
+            , describe "should extract the elements in a path comprising a slice selector"
                 [ test "$.store.book[1:3]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1:3]" sampleJson)
@@ -32,7 +42,7 @@ suite =
                         equal (JsonPath.Extractor.run "$.store.book[:].author" sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
                 ]
-            , describe "should extract the elements in a path comprising an index with a single value"
+            , describe "should extract the elements in a path comprising an index selector with a single value"
                 [ test "$.store.book[1]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1]" sampleJson)
@@ -42,7 +52,7 @@ suite =
                         equal (JsonPath.Extractor.run "$.store.book[-2].author" sampleJson)
                             (Ok (Json.Encode.string "Herman Melville"))
                 ]
-            , describe "should extract the elements in a path comprising an index with multiple values"
+            , describe "should extract the elements in a path comprising an index selector with multiple values"
                 [ test "$.store.book[1,3]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1,3]" sampleJson)
@@ -52,7 +62,7 @@ suite =
                         equal (JsonPath.Extractor.run "$.store.book[-2,-1].title" sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Moby Dick", "The Lord of the Rings" ]))
                 ]
-            , describe "should extract the elements in a path comprising a key with multiple values"
+            , describe "should extract the elements in a path comprising a key selector with multiple values"
                 [ test "$.store.book[1][author,title]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1][author,title]" sampleJson)
