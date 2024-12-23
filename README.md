@@ -23,8 +23,9 @@ This package is a work in progress and does not yet support the full [JSONPath s
 
 | Segment       | Syntax  | Example                      | Supported |
 | ------------- | ------- | ---------------------------- | --------- |
-| Child node    | `.`     | `$.store.book.author`        | ✅        |
-| Child node(s) | `[]`    | `$.store.book[author,title]` | ✅        |
+| Child           | `.`   | `$.store.book.author`        | ✅        |
+| Children        | `[]`  | `$.store.book[author,title]` | ✅        |
+| All descendants | `..`  | `$.store..price`             | ❌        |
 
 ### Selectors
 
