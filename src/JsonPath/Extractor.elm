@@ -34,18 +34,14 @@ extract path json =
                 Err err ->
                     Err (JsonDecodingError err)
 
-        (Slice { start, end, step }) :: remainingSegments ->
+        (Slice { start, maybeEnd, step }) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
-                    let
-                        slice =
-                            -- FIXME Use step
-                            end
-                                |> Maybe.withDefault (Array.length array)
-                                |> (\e -> Array.slice start e array)
-                                |> Array.toList
-                    in
-                    slice
+                    -- FIXME Use the step value
+                    maybeEnd
+                        |> Maybe.withDefault (Array.length array)
+                        |> (\end -> Array.slice start end array)
+                        |> Array.toList
                         |> traverse (extract remainingSegments)
                         |> Result.map (Json.Encode.list identity)
 

@@ -77,7 +77,7 @@ sliceOrIndicesTail startOrHead =
 
 sliceTail : Int -> Parser Selector
 sliceTail start =
-    succeed (\end step -> Slice { start = start, end = end, step = step })
+    succeed (\maybeEnd step -> Slice { start = start, maybeEnd = maybeEnd, step = step })
         |. symbol ":"
         -- Use a default end value of Nothing if unspecified
         -- Note that we cannot use -1 here, else the last element would not be included
