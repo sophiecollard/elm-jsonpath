@@ -40,7 +40,15 @@ suite =
                 , test "$.store.book[:].author" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[:].author" sampleJson)
-                            (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
+                            (Ok
+                                (Json.Encode.list Json.Encode.string
+                                    [ "Nigel Rees"
+                                    , "Evelyn Waugh"
+                                    , "Herman Melville"
+                                    , "J. R. R. Tolkien"
+                                    ]
+                                )
+                            )
                 , test "$.store.book[0:4:2]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[0:4:2]" sampleJson)
@@ -86,11 +94,12 @@ suite =
                 , test "$.store.book[-2,-1][author,title]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2,-1][author,title]" sampleJson)
-                            -- (Ok (Json.Encode.list Json.Encode.string [ "Herman Melville", "Moby Dick", "J. R. R. Tolkien", "The Lord of the Rings" ]))
                             (Ok
-                                (Json.Encode.list identity
-                                    [ Json.Encode.list Json.Encode.string [ "Herman Melville", "Moby Dick" ]
-                                    , Json.Encode.list Json.Encode.string [ "J. R. R. Tolkien", "The Lord of the Rings" ]
+                                (Json.Encode.list Json.Encode.string
+                                    [ "Herman Melville"
+                                    , "Moby Dick"
+                                    , "J. R. R. Tolkien"
+                                    , "The Lord of the Rings"
                                     ]
                                 )
                             )
