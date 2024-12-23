@@ -19,4 +19,3 @@ type Error
     = PathParsingError (List Parser.DeadEnd)
     | JsonDecodingError Json.Decode.Error
     | IndexNotFound Int
-    | NotImplemented
