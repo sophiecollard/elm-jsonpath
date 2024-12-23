@@ -1,6 +1,38 @@
 module Utils.ListUtils exposing (..)
 
 
+collectJustValues : List (Maybe a) -> List a
+collectJustValues list =
+    -- Returns all the Just values in a List of Maybes
+    let
+        f : Maybe a -> List a -> List a
+        f maybeA acc =
+            case maybeA of
+                Just a ->
+                    a :: acc
+
+                Nothing ->
+                    acc
+    in
+    List.foldl f [] list
+
+
+collectOkValues : List (Result e a) -> List a
+collectOkValues list =
+    -- Collects all the Ok values in a List of Results
+    let
+        f : Result e a -> List a -> List a
+        f result acc =
+            case result of
+                Ok a ->
+                    a :: acc
+
+                Err _ ->
+                    acc
+    in
+    List.foldl f [] list
+
+
 traverseMaybe : (a -> Maybe b) -> List a -> Maybe (List b)
 traverseMaybe f list =
     -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
