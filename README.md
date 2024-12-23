@@ -6,7 +6,21 @@ A partial implementation of the [JSONPath specification](https://www.rfc-editor.
 
 ## Quick start
 
-TBC once the packaged is published.
+```elm
+import Json.Decode
+import JsonPath
+import JsonPath.Extractor
+
+jsonSample : Json.Decode.Value
+jsonSample =
+    ... -- Your JSON here
+
+extractedJson : Result JsonPath.Error Json.Decode.Value
+extractedJson =
+    JsonPath.Extractor.run
+        "$.store.book[*].author"
+        sampleJson
+```
 
 ## Status
 
