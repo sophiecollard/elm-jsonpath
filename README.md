@@ -2,7 +2,39 @@
 
 ![build status](https://github.com/sophiecollard/elm-jsonpath/actions/workflows/build.yml/badge.svg)
 
-A [JSONPath](https://www.rfc-editor.org/rfc/rfc9535#name-overview-of-jsonpath-expres) implementation in Elm.
+A partial implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
+
+## Quick start
+
+TBC once the packaged is published.
+
+## Status
+
+This package is a work in progress and does not yet support the full [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535). Below is a summary of the supported syntax:
+
+### Identifiers
+
+| Identifier   | Syntax | Supported |
+| ------------ | ------ | --------- |
+| Root node    | `$`    | ✅        |
+| Current node | `@`    | ❌        |
+
+### Segments
+
+| Segment       | Syntax  | Example                      | Supported |
+| ------------- | ------- | ---------------------------- | --------- |
+| Child node    | `.`     | `$.store.book.author`        | ✅        |
+| Child node(s) | `[]`    | `$.store.book[author,title]` | ✅        |
+
+### Selectors
+
+| Selector          | Syntax            | Example                       | Supported |
+| ----------------- | ----------------- | ----------------------------- | --------- |
+| Wildcard          | `*`               | `$.store.book[*]`             | ✅        |
+| Array slice       | `start:end:step`  | `$.store.book[0:4:-2]`        | ✅        |
+| Index             | `1`               | `$.store.book[1,2,3] `        | ✅        |
+| Name              | `name`            | `$.store.book[author,title]`  | ✅        |
+| Filter expression | `?<logical-expr>` | `$.store.book[?@.price < 10]` | ❌        |
 
 ## Licence
 
