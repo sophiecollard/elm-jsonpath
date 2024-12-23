@@ -50,9 +50,10 @@ extract path json =
         (Indices i []) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
-                    Result.andThen
-                        (extract remainingSegments)
-                        (i |> toPositiveIndex (Array.length array) |> getElementAt array)
+                    i
+                        |> toPositiveIndex (Array.length array)
+                        |> getElementAt array
+                        |> Result.andThen (extract remainingSegments)
 
                 Err err ->
                     Err (JsonDecodingError err)
@@ -70,12 +71,9 @@ extract path json =
                     Err (JsonDecodingError err)
 
         (Keys k []) :: remainingSegments ->
-            case decodeValue (Json.Decode.field k Json.Decode.value) json of
-                Ok remainingJson ->
-                    extract remainingSegments remainingJson
-
-                Err err ->
-                    Err (JsonDecodingError err)
+            k
+                |> getValueAt json
+                |> Result.andThen (extract remainingSegments)
 
         (Keys k ks) :: remainingSegments ->
             -- FIXME Don't forget to flatten the output if necessary
