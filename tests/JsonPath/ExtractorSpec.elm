@@ -3,6 +3,7 @@ module JsonPath.ExtractorSpec exposing (..)
 import Expect exposing (equal)
 import Json.Decode exposing (Value)
 import Json.Encode
+import JsonPath exposing (CursorOp(..), Error(..))
 import JsonPath.Extractor
 import Test exposing (..)
 
@@ -23,6 +24,16 @@ suite =
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[*].author" sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
+                , test "$.store[*]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store[*]" sampleJson)
+                            (Ok
+                                (Json.Encode.list identity
+                                    [ bicycle
+                                    , Json.Encode.list identity [ book0, book1, book2, book3 ]
+                                    ]
+                                )
+                            )
                 ]
             , describe "should extract the elements in a path comprising a slice selector"
                 [ test "$.store.book[1:3]" <|
@@ -103,6 +114,34 @@ suite =
                                     ]
                                 )
                             )
+                ]
+            , describe "should correctly report an 'index not found' error"
+                [ test "$.store.book[5].author" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book[5].author" sampleJson)
+                            (Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5))
+                ]
+            , describe "should correctly report a 'key not found' error"
+                [ test "$.store.pet[*]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.pet[*]" sampleJson)
+                            (Err (KeyNotFound [ DownKey "store" ] "pet"))
+                , test "$.store.book[0][author,publisher]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book[0][author,publisher]" sampleJson)
+                            (Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "publisher"))
+                ]
+            , describe "should correctly report a 'not a JSON array' error"
+                [ test "$.store[1]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store[1]" sampleJson)
+                            (Err (NotAJsonArray [ DownKey "store" ]))
+                ]
+            , describe "should correctly report a 'not a JSON array nor an object' error"
+                [ test "$.store.book[1].author[*]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book[1].author[*]" sampleJson)
+                            (Err (NotAJsonArrayNorAnObject [ DownKey "author", DownIndex 1, DownKey "book", DownKey "store" ]))
                 ]
             ]
         ]

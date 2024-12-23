@@ -1,7 +1,7 @@
 module Utils.JsonUtils exposing (..)
 
 import Json.Decode exposing (Value, decodeValue)
-import JsonPath exposing (Error(..))
+import JsonPath exposing (Cursor, Error(..))
 import Utils.ListUtils exposing (traverseMaybe)
 
 
@@ -23,9 +23,9 @@ flattenIfNestedList jsonValues =
             jsonValues
 
 
-getValueAt : Value -> String -> Result Error Value
-getValueAt json key =
+getValueAt : Value -> Cursor -> String -> Result Error Value
+getValueAt json cursor key =
     -- Attempts to retrieve the value at the specified key in a JSON object
     json
         |> decodeValue (Json.Decode.field key Json.Decode.value)
-        |> Result.mapError JsonDecodingError
+        |> Result.mapError (\_ -> KeyNotFound cursor key)
