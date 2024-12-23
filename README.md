@@ -1,5 +1,7 @@
 # JSONPath
 
+![build status](https://github.com/sophiecollard/elm-jsonpath/actions/workflows/build.yml/badge.svg)
+
 A [JSONPath](https://www.rfc-editor.org/rfc/rfc9535#name-overview-of-jsonpath-expres) implementation in Elm.
 
 ## Licence
