@@ -16,28 +16,41 @@ import JsonPath.Parser exposing (path)
 import Parser
 import Utils.ArrayUtils exposing (getElementAt, slice)
 import Utils.JsonUtils exposing (flattenIfNestedList, getValueAt)
-import Utils.ListUtils exposing (traverseResult)
+import Utils.ListUtils exposing (collectOkValues, traverseResult)
 
 
 {-| Attempts to extract the JSON `Value` at the specified path.
 
-    run "$.foo[0]" (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Ok (Json.Encode.string "bar")
+    run "$.foo[0]" False (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Ok (Json.Encode.string "bar")
 
-    run "$.foo.bar" (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Err (KeyNotFound [ DownKey "foo" ] "bar")
+    run "$.foo.bar" False (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Err (KeyNotFound [ DownKey "foo" ] "bar")
 
 -}
-run : String -> Value -> Result Error Value
-run rawPath json =
+run : String -> Bool -> Value -> Result Error Value
+run rawPath strict json =
     case Parser.run path rawPath of
         Ok path ->
-            extract path [] json
+            extract path strict [] json
 
         Err err ->
             Err (PathParsingError err)
 
 
-extract : Path -> Cursor -> Value -> Result Error Value
-extract path cursor json =
+extract : Path -> Bool -> Cursor -> Value -> Result Error Value
+extract path strict cursor json =
+    let
+        traverseOrCollect : (a -> Result e b) -> List a -> Result e (List b)
+        traverseOrCollect f list =
+            if strict then
+                list
+                    |> traverseResult f
+
+            else
+                list
+                    |> List.map f
+                    |> collectOkValues
+                    |> Ok
+    in
     case path of
         [] ->
             Ok json
@@ -47,14 +60,14 @@ extract path cursor json =
                 ( Ok list, _ ) ->
                     list
                         |> List.indexedMap Tuple.pair
-                        |> traverseResult (\( i, value ) -> extract remainingSegments (DownIndex i :: cursor) value)
+                        |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
 
                 ( _, Ok dict ) ->
                     dict
                         |> Dict.toList
-                        |> traverseResult (\( k, value ) -> extract remainingSegments (DownKey k :: cursor) value)
+                        |> traverseOrCollect (\( k, value ) -> extract remainingSegments strict (DownKey k :: cursor) value)
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
 
@@ -72,7 +85,7 @@ extract path cursor json =
                         |> Array.indexedMap Tuple.pair
                         |> slice start end step
                         |> Array.toList
-                        |> traverseResult (\( i, value ) -> extract remainingSegments (DownIndex i :: cursor) value)
+                        |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
 
@@ -85,7 +98,7 @@ extract path cursor json =
                     index
                         |> toPositiveIndex (Array.length array)
                         |> getElementAt array cursor
-                        |> Result.andThen (extract remainingSegments (DownIndex index :: cursor))
+                        |> Result.andThen (extract remainingSegments strict (DownIndex index :: cursor))
 
                 Err _ ->
                     Err (NotAJsonArray cursor)
@@ -96,7 +109,7 @@ extract path cursor json =
                     (index :: indices)
                         |> List.map (toPositiveIndex (Array.length array))
                         |> traverseResult (\i -> getElementAt array cursor i |> Result.map (Tuple.pair i))
-                        |> Result.andThen (traverseResult (\( i, value ) -> extract remainingSegments (DownIndex i :: cursor) value))
+                        |> Result.andThen (traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value))
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
 
@@ -106,12 +119,12 @@ extract path cursor json =
         (Keys key []) :: remainingSegments ->
             key
                 |> getValueAt json cursor
-                |> Result.andThen (extract remainingSegments (DownKey key :: cursor))
+                |> Result.andThen (extract remainingSegments strict (DownKey key :: cursor))
 
         (Keys key keys) :: remainingSegments ->
             (key :: keys)
                 |> traverseResult (\k -> getValueAt json cursor k |> Result.map (Tuple.pair k))
-                |> Result.andThen (traverseResult (\( k, value ) -> extract remainingSegments (DownKey k :: cursor) value))
+                |> Result.andThen (traverseOrCollect (\( k, value ) -> extract remainingSegments strict (DownKey k :: cursor) value))
                 |> Result.map flattenIfNestedList
                 |> Result.map (Json.Encode.list identity)
 

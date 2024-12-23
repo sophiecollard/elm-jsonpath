@@ -2,7 +2,7 @@
 
 ![build status](https://github.com/sophiecollard/jsonpath/actions/workflows/build.yml/badge.svg)
 
-A partial implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
+A [partial](#status) implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
 
 ## Installation
 
@@ -10,22 +10,56 @@ A partial implementation of the [JSONPath specification](https://www.rfc-editor.
 elm install sophiecollard/jsonpath
 ```
 
-## Quick start
+## Example
 
 ```elm
 import Json.Decode
 import JsonPath
 import JsonPath.Extractor
 
-jsonSample : Json.Decode.Value
-jsonSample =
-    ... -- Your JSON here
+sampleJson : Json.Decode.Value
+sampleJson =
+    ... -- Your JSON here. See the sampleJson value in docs/Sample.elm for instance.
 
 extractedJson : Result JsonPath.Error Json.Decode.Value
 extractedJson =
     JsonPath.Extractor.run
         "$.store.book[*].author"
+        False
         sampleJson
+```
+
+The `JsonPath.Extractor.run` function takes 3 arguments:
+  1. A `String` representing a JSONPath expression
+  2. A `strict` flag of type `Bool`
+  3. A value of type `Json.Decode.Value`
+
+#### `strict` flag
+
+The best way to understand how the `strict` flag works is with an example, using the [raw](docs/sample.json) or [parsed](docs/Sample.elm) JSON sample in the [docs](docs/) folder.
+
+With `strict = True`, attempts to extract the elements at `$.store.book[*].isbn` will fail because the first two books do not have an `isbn` key:
+
+```elm
+JsonPath.Extractor.run "$.store.book[*].isbn" True sampleJson ==
+    Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "isbn")
+```
+
+With `strict = False` however, entries missing the `isbn` key are ignored and the ISBNs of the last two books returned:
+
+```elm
+JsonPath.Extractor.run "$.store.book[*].isbn" False sampleJson ==
+    Ok (Json.Encode.list Json.Encode.string [ "0-553-21311-3", "0-395-19395-8" ])
+```
+
+Note that this only works with JSONPath expressions which return a list of results. With expressions which return exactly one result, a missing index or key will yield an error, regardless of the `strict` flag's value.
+
+```elm
+JsonPath.Extractor.run "$.store[*][5]" False sampleJson ==
+    (Ok (Json.Encode.list identity []))
+
+JsonPath.Extractor.run "$.store.book[5]" False sampleJson ==
+    (Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5))
 ```
 
 ## Status
