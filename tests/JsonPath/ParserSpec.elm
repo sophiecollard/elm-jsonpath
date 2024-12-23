@@ -66,18 +66,16 @@ suite =
                             ]
                         )
 
-            -- FIXME
-            , skip <|
-                test "should parse a path composed of multiple segments using dot notation" <|
-                    \_ ->
-                        equal (run jsonPath "$.foo.1.bar.*")
-                            (Ok
-                                [ Keys "foo" []
-                                , Indices 1 []
-                                , Keys "bar" []
-                                , Wildcard
-                                ]
-                            )
+            -- , test "should parse a path composed of multiple segments using dot notation" <|
+            --     \_ ->
+            --         equal (run jsonPath "$.foo.1.bar.*")
+            --             (Ok
+            --                 [ Keys "foo" []
+            --                 , Indices 1 []
+            --                 , Keys "bar" []
+            --                 , Wildcard
+            --                 ]
+            --             )
             , test "should parse a path composed of multiple segments using mixed notations" <|
                 \_ ->
                     equal (run jsonPath "$.foo[1].bar[*]")

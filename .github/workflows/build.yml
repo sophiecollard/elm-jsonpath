@@ -1,0 +1,33 @@
+name: elm-jsonpath
+run-name: elm-jsonpath run by ${{ github.actor }}
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENCE'
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENCE'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20.0.0
+        cache: ''
+    - name: Install elm and elm-test
+      run: npm install --location=global elm@latest-0.19.1 && npm install --location=global elm-test@0.19.1-revision12
+    - name: Run unit tests
+      run: elm-test
