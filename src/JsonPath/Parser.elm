@@ -87,7 +87,7 @@ sliceTail start =
             ]
         -- Use a default step value of 1 if unspecified
         |= oneOf
-            [ succeed identity |. symbol ":" |= signedInt
+            [ succeed identity |. symbol ":" |= int
             , succeed 1
             ]
 

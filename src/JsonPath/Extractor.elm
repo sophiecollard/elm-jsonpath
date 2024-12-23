@@ -37,10 +37,9 @@ extract path json =
         (Slice { start, maybeEnd, step }) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
-                    -- FIXME Use the step value
                     maybeEnd
                         |> Maybe.withDefault (Array.length array)
-                        |> (\end -> Array.slice start end array)
+                        |> (\end -> slice start end step array)
                         |> Array.toList
                         |> traverse (extract remainingSegments)
                         |> Result.map (Json.Encode.list identity)
@@ -107,6 +106,34 @@ getValueAt json key =
     json
         |> decodeValue (Json.Decode.field key Json.Decode.value)
         |> Result.mapError JsonDecodingError
+
+
+slice : Int -> Int -> Int -> Array a -> Array a
+slice start end step array =
+    let
+        enforceStep : Int -> a -> Maybe a
+        enforceStep i a =
+            if modBy step i == 0 then
+                Just a
+
+            else
+                Nothing
+
+        flatten : Maybe a -> Array a -> Array a
+        flatten maybeA tail =
+            case maybeA of
+                Just a ->
+                    [ a ]
+                        |> Array.fromList
+                        |> (\head -> Array.append head tail)
+
+                Nothing ->
+                    tail
+    in
+    array
+        |> Array.indexedMap enforceStep
+        |> Array.slice start end
+        |> Array.foldr flatten Array.empty
 
 
 traverse : (a -> Result e b) -> List a -> Result e (List b)
