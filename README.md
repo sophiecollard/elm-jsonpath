@@ -34,7 +34,7 @@ This package is a work in progress and does not yet support the full [JSONPath s
 | Wildcard          | `*`               | `$.store.book[*]`             | ✅        |
 | Array slice       | `start:end:step`  | `$.store.book[0:4:-2]`        | ✅        |
 | Index             | `1`               | `$.store.book[1,2,3] `        | ✅        |
-| Name              | `name`            | `$.store.book[author,title]`  | ✅        |
+| Name / key        | `name`            | `$.store.book[author,title]`  | ✅        |
 | Filter expression | `?<logical-expr>` | `$.store.book[?@.price < 10]` | ❌        |
 
 ## Licence
