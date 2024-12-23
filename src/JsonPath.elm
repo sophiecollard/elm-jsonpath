@@ -1,4 +1,4 @@
-module JsonPath exposing (..)
+module JsonPath exposing (Cursor, CursorOp(..), Error(..), Path, Selector(..))
 
 import Parser
 
