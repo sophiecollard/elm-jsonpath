@@ -1,6 +1,6 @@
 # JSONPath
 
-![build status](https://github.com/sophiecollard/elm-jsonpath/actions/workflows/build.yml/badge.svg)
+![build status](https://github.com/sophiecollard/jsonpath/actions/workflows/build.yml/badge.svg)
 
 A partial implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
 
