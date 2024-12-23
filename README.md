@@ -4,6 +4,12 @@
 
 A partial implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
 
+## Installation
+
+```sh
+elm install sophiecollard/jsonpath
+```
+
 ## Quick start
 
 ```elm
