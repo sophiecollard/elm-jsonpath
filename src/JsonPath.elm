@@ -4,7 +4,7 @@ import Json.Decode
 import Parser
 
 
-type alias JsonPath =
+type alias Path =
     List Selector
 
 

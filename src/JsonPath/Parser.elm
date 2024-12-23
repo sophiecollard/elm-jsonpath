@@ -1,10 +1,10 @@
 module JsonPath.Parser exposing (jsonPath, segment, selector)
 
-import JsonPath exposing (JsonPath, Selector(..))
+import JsonPath exposing (Path, Selector(..))
 import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, end, getChompedString, int, oneOf, sequence, spaces, succeed, symbol)
 
 
-jsonPath : Parser JsonPath
+jsonPath : Parser Path
 jsonPath =
     succeed identity
         |. symbol "$"

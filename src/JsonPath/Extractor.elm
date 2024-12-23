@@ -3,7 +3,7 @@ module JsonPath.Extractor exposing (extract, run)
 import Array
 import Json.Decode exposing (Value, decodeValue)
 import Json.Encode
-import JsonPath exposing (Error(..), JsonPath, Selector(..))
+import JsonPath exposing (Error(..), Path, Selector(..))
 import JsonPath.Parser exposing (jsonPath)
 import Parser
 import Utils.ArrayUtils exposing (getElementAt, slice)
@@ -21,7 +21,7 @@ run rawPath json =
             Err (PathParsingError err)
 
 
-extract : JsonPath -> Value -> Result Error Value
+extract : Path -> Value -> Result Error Value
 extract path json =
     case path of
         [] ->
