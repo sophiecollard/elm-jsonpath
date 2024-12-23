@@ -1,20 +1,34 @@
 module JsonPath.Extractor exposing (run)
 
+{-| The `Extractor` module exposes a single `run` method which attempts to extract the JSON `Value` at the
+specified path.
+
+@docs run
+
+-}
+
 import Array
 import Dict
 import Json.Decode exposing (Value, decodeValue)
 import Json.Encode
 import JsonPath exposing (Cursor, CursorOp(..), Error(..), Path, Selector(..))
-import JsonPath.Parser exposing (jsonPath)
+import JsonPath.Parser exposing (path)
 import Parser
 import Utils.ArrayUtils exposing (getElementAt, slice)
 import Utils.JsonUtils exposing (flattenIfNestedList, getValueAt)
 import Utils.ListUtils exposing (traverseResult)
 
 
+{-| Attempts to extract the JSON `Value` at the specified path.
+
+    run "$.foo[0]" (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Ok (Json.Encode.string "bar")
+
+    run "$.foo.bar" (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Err (KeyNotFound [ DownKey "foo" ] "bar")
+
+-}
 run : String -> Value -> Result Error Value
 run rawPath json =
-    case Parser.run jsonPath rawPath of
+    case Parser.run path rawPath of
         Ok path ->
             extract path [] json
 

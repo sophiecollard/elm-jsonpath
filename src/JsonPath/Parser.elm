@@ -1,11 +1,19 @@
-module JsonPath.Parser exposing (jsonPath, segment, selector)
+module JsonPath.Parser exposing (path)
+
+{-| The `Parser` module exposes a `Parser Path` instance which allows parsing a path from a `String`.
+
+@docs path
+
+-}
 
 import JsonPath exposing (Path, Selector(..))
 import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, end, getChompedString, int, oneOf, sequence, spaces, succeed, symbol)
 
 
-jsonPath : Parser Path
-jsonPath =
+{-| Allows parsing a path from a `String`.
+-}
+path : Parser Path
+path =
     succeed identity
         |. symbol "$"
         |= sequence
