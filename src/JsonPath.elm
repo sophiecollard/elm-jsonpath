@@ -1,6 +1,5 @@
 module JsonPath exposing (..)
 
-import Json.Decode
 import Parser
 
 
@@ -17,5 +16,16 @@ type Selector
 
 type Error
     = PathParsingError (List Parser.DeadEnd)
-    | JsonDecodingError Json.Decode.Error
-    | IndexNotFound Int
+    | IndexNotFound Cursor Int
+    | KeyNotFound Cursor String
+    | NotAJsonArray Cursor
+    | NotAJsonArrayNorAnObject Cursor
+
+
+type alias Cursor =
+    List CursorOp
+
+
+type CursorOp
+    = DownIndex Int
+    | DownKey String

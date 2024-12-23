@@ -1,14 +1,14 @@
 module Utils.ArrayUtils exposing (..)
 
 import Array exposing (Array)
-import JsonPath exposing (Error(..))
+import JsonPath exposing (Cursor, Error(..))
 
 
-getElementAt : Array a -> Int -> Result Error a
-getElementAt array i =
+getElementAt : Array a -> Cursor -> Int -> Result Error a
+getElementAt array cursor i =
     array
         |> Array.get i
-        |> Result.fromMaybe (IndexNotFound i)
+        |> Result.fromMaybe (IndexNotFound cursor i)
 
 
 slice : Int -> Int -> Int -> Array a -> Array a
