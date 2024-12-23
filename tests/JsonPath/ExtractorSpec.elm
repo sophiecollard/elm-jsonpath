@@ -14,19 +14,19 @@ suite =
         [ describe "run method"
             [ test "should extract the root element" <|
                 \_ ->
-                    equal (JsonPath.Extractor.run "$" sampleJson) (Ok sampleJson)
+                    equal (JsonPath.Extractor.run "$" True sampleJson) (Ok sampleJson)
             , describe "should extract the elements in a path comprising a wildcard selector"
                 [ test "$.store.book[*]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[*]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[*]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book0, book1, book2, book3 ]))
                 , test "$.store.book[*].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[*].author" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[*].author" True sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien" ]))
                 , test "$.store[*]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store[*]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store[*]" True sampleJson)
                             (Ok
                                 (Json.Encode.list identity
                                     [ bicycle
@@ -38,19 +38,19 @@ suite =
             , describe "should extract the elements in a path comprising a slice selector"
                 [ test "$.store.book[1:3]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[1:3]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[1:3]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book1, book2 ]))
                 , test "$.store.book[2:]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[2:]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[2:]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book2, book3 ]))
                 , test "$.store.book[-3:]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[-3:]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[-3:]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book1, book2, book3 ]))
                 , test "$.store.book[:].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[:].author" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[:].author" True sampleJson)
                             (Ok
                                 (Json.Encode.list Json.Encode.string
                                     [ "Nigel Rees"
@@ -62,49 +62,49 @@ suite =
                             )
                 , test "$.store.book[0:4:2]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[0:4:2]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[0:4:2]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book0, book2 ]))
                 , test "$.store.book[::3]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[::3]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[::3]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book0, book3 ]))
                 , test "$.store.book[::-1]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[::-1]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[::-1]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book3, book2, book1, book0 ]))
                 , test "$.store.book[::-2].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[::-2].author" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[::-2].author" True sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Herman Melville", "Nigel Rees" ]))
                 ]
             , describe "should extract the elements in a path comprising an index selector with a single value"
                 [ test "$.store.book[1]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[1]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[1]" True sampleJson)
                             (Ok book1)
                 , test "$.store.book[-2].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[-2].author" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[-2].author" True sampleJson)
                             (Ok (Json.Encode.string "Herman Melville"))
                 ]
             , describe "should extract the elements in a path comprising an index selector with multiple values"
                 [ test "$.store.book[1,3]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[1,3]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[1,3]" True sampleJson)
                             (Ok (Json.Encode.list identity [ book1, book3 ]))
                 , test "$.store.book[-2,-1].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[-2,-1].title" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[-2,-1].title" True sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Moby Dick", "The Lord of the Rings" ]))
                 ]
             , describe "should extract the elements in a path comprising a key selector with multiple values"
                 [ test "$.store.book[1][author,title]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[1][author,title]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[1][author,title]" True sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Evelyn Waugh", "Sword of Honour" ]))
                 , test "$.store.book[-2,-1][author,title]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[-2,-1][author,title]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[-2,-1][author,title]" True sampleJson)
                             (Ok
                                 (Json.Encode.list Json.Encode.string
                                     [ "Herman Melville"
@@ -118,29 +118,29 @@ suite =
             , describe "should correctly report an 'index not found' error"
                 [ test "$.store.book[5].author" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[5].author" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[5].author" True sampleJson)
                             (Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5))
                 ]
             , describe "should correctly report a 'key not found' error"
                 [ test "$.store.pet[*]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.pet[*]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.pet[*]" True sampleJson)
                             (Err (KeyNotFound [ DownKey "store" ] "pet"))
                 , test "$.store.book[0][author,publisher]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[0][author,publisher]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[0][author,publisher]" True sampleJson)
                             (Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "publisher"))
                 ]
             , describe "should correctly report a 'not a JSON array' error"
                 [ test "$.store[1]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store[1]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store[1]" True sampleJson)
                             (Err (NotAJsonArray [ DownKey "store" ]))
                 ]
             , describe "should correctly report a 'not a JSON array nor an object' error"
                 [ test "$.store.book[1].author[*]" <|
                     \_ ->
-                        equal (JsonPath.Extractor.run "$.store.book[1].author[*]" sampleJson)
+                        equal (JsonPath.Extractor.run "$.store.book[1].author[*]" True sampleJson)
                             (Err (NotAJsonArrayNorAnObject [ DownKey "author", DownIndex 1, DownKey "book", DownKey "store" ]))
                 ]
             ]
