@@ -1,7 +1,7 @@
 module JsonPath.ParserSpec exposing (..)
 
 import Expect exposing (equal)
-import JsonPath exposing (Selector(..))
+import JsonPath exposing (Segment(..), Selector(..))
 import JsonPath.Parser exposing (path)
 import Parser exposing (run)
 import Test exposing (..)
@@ -9,29 +9,63 @@ import Test exposing (..)
 
 suite : Test
 suite =
-    describe "The Parser module's"
-        [ describe "path method"
-            [ test "should parse a path with no segments" <|
+    describe "The Parser module's path method"
+        [ describe "should parse the following path expressions"
+            [ test "$" <|
                 \_ ->
                     equal (run path "$") (Ok [])
-            , test "should parse a path composed of multiple segments using bracket notation" <|
+            , test "$.*.foo.0" <|
                 \_ ->
-                    equal (run path "$[foo,bar,baz][1,2,3][*][::-1]")
+                    equal (run path "$.*.foo.0")
                         (Ok
-                            [ Keys "foo" [ "bar", "baz" ]
-                            , Indices 1 [ 2, 3 ]
-                            , Wildcard
-                            , Slice { start = 0, maybeEnd = Nothing, step = -1 }
+                            [ Children Wildcard
+                            , Children (Keys "foo" [])
+                            , Children (Indices 0 [])
                             ]
                         )
-            , test "should parse a path composed of multiple segments using mixed notations" <|
+            , test "$[foo,bar,baz][11,12,13][*][::-1]" <|
                 \_ ->
-                    equal (run path "$.foo[1,2,3].bar[*]")
+                    equal (run path "$[foo,bar,baz][11,12,13][*][::-1]")
                         (Ok
-                            [ Keys "foo" []
-                            , Indices 1 [ 2, 3 ]
-                            , Keys "bar" []
-                            , Wildcard
+                            [ Children (Keys "foo" [ "bar", "baz" ])
+                            , Children (Indices 11 [ 12, 13 ])
+                            , Children Wildcard
+                            , Children (Slice { start = 0, maybeEnd = Nothing, step = -1 })
+                            ]
+                        )
+            , test "$.foo[-4,-5,-6].bar.baz[*]" <|
+                \_ ->
+                    equal (run path "$.foo[-4,-5,-6].bar.baz[*]")
+                        (Ok
+                            [ Children (Keys "foo" [])
+                            , Children (Indices -4 [ -5, -6 ])
+                            , Children (Keys "bar" [])
+                            , Children (Keys "baz" [])
+                            , Children Wildcard
+                            ]
+                        )
+            , test "$..foo" <|
+                \_ ->
+                    equal (run path "$..foo")
+                        (Ok
+                            [ Descendants (Keys "foo" [])
+                            ]
+                        )
+            , test "$..[foo,bar,baz]" <|
+                \_ ->
+                    equal (run path "$..[foo,bar,baz]")
+                        (Ok
+                            [ Descendants (Keys "foo" [ "bar", "baz" ])
+                            ]
+                        )
+            , test "$.foo[*]..baz[::-1]" <|
+                \_ ->
+                    equal (run path "$.foo[*]..baz[::-1]")
+                        (Ok
+                            [ Children (Keys "foo" [])
+                            , Children Wildcard
+                            , Descendants (Keys "baz" [])
+                            , Children (Slice { start = 0, maybeEnd = Nothing, step = -1 })
                             ]
                         )
             ]

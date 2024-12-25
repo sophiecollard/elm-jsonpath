@@ -11,12 +11,13 @@ import Array
 import Dict
 import Json.Decode exposing (Value, decodeValue)
 import Json.Encode
-import JsonPath exposing (Cursor, CursorOp(..), Error(..), Path, Selector(..))
+import JsonPath exposing (Cursor, CursorOp(..), Error(..), Path, Segment(..), Selector(..))
 import JsonPath.Parser exposing (path)
 import Parser
-import Utils.ArrayUtils exposing (getElementAt, slice)
-import Utils.JsonUtils exposing (flattenIfNestedList, getValueAt)
-import Utils.ListUtils exposing (collectOkValues, traverseResult)
+import Utils.ArrayUtils exposing (getElementAt)
+import Utils.JsonUtils exposing (flattenIfNestedList, flattenNestedLists, getValueAt)
+import Utils.ListUtils exposing (collectOkValues, slice, traverseResult)
+import Utils.ResultUtils exposing (combine)
 
 
 {-| Attempts to extract the JSON `Value` at the specified path.
@@ -55,11 +56,11 @@ extract path strict cursor json =
         [] ->
             Ok json
 
-        Wildcard :: remainingSegments ->
-            case ( decodeValue (Json.Decode.list Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
-                ( Ok list, _ ) ->
-                    list
-                        |> List.indexedMap Tuple.pair
+        (Children Wildcard) :: remainingSegments ->
+            case ( decodeValue (Json.Decode.array Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
+                ( Ok array, _ ) ->
+                    array
+                        |> Array.toIndexedList
                         |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
@@ -74,7 +75,7 @@ extract path strict cursor json =
                 _ ->
                     Err (NotAJsonArrayNorAnObject cursor)
 
-        (Slice { start, maybeEnd, step }) :: remainingSegments ->
+        (Children (Slice { start, maybeEnd, step })) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
                     let
@@ -82,9 +83,8 @@ extract path strict cursor json =
                             Maybe.withDefault (Array.length array) maybeEnd
                     in
                     array
-                        |> Array.indexedMap Tuple.pair
+                        |> Array.toIndexedList
                         |> slice start end step
-                        |> Array.toList
                         |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
                         |> Result.map flattenIfNestedList
                         |> Result.map (Json.Encode.list identity)
@@ -92,7 +92,7 @@ extract path strict cursor json =
                 Err _ ->
                     Err (NotAJsonArray cursor)
 
-        (Indices index []) :: remainingSegments ->
+        (Children (Indices index [])) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
                     index
@@ -103,7 +103,7 @@ extract path strict cursor json =
                 Err _ ->
                     Err (NotAJsonArray cursor)
 
-        (Indices index indices) :: remainingSegments ->
+        (Children (Indices index indices)) :: remainingSegments ->
             case decodeValue (Json.Decode.array Json.Decode.value) json of
                 Ok array ->
                     (index :: indices)
@@ -116,17 +116,155 @@ extract path strict cursor json =
                 Err _ ->
                     Err (NotAJsonArray cursor)
 
-        (Keys key []) :: remainingSegments ->
+        (Children (Keys key [])) :: remainingSegments ->
             key
                 |> getValueAt json cursor
                 |> Result.andThen (extract remainingSegments strict (DownKey key :: cursor))
 
-        (Keys key keys) :: remainingSegments ->
+        (Children (Keys key keys)) :: remainingSegments ->
             (key :: keys)
                 |> traverseResult (\k -> getValueAt json cursor k |> Result.map (Tuple.pair k))
                 |> Result.andThen (traverseOrCollect (\( k, value ) -> extract remainingSegments strict (DownKey k :: cursor) value))
                 |> Result.map flattenIfNestedList
                 |> Result.map (Json.Encode.list identity)
+
+        (Descendants Wildcard) :: remainingSegments ->
+            case ( decodeValue (Json.Decode.array Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
+                ( Ok array, _ ) ->
+                    let
+                        valuesAtCursor : Result Error (List Value)
+                        valuesAtCursor =
+                            array
+                                |> Array.toIndexedList
+                                |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
+
+                        downstreamValues : Result Error (List Value)
+                        downstreamValues =
+                            array
+                                |> Array.toIndexedList
+                                |> traverseOrCollect (\( i, value ) -> extract path strict (DownIndex i :: cursor) value)
+                                |> Result.map flattenNestedLists
+                    in
+                    combine List.append valuesAtCursor downstreamValues
+                        |> Result.map (Json.Encode.list identity)
+
+                ( _, Ok dict ) ->
+                    let
+                        valuesAtCursor : Result Error (List Value)
+                        valuesAtCursor =
+                            dict
+                                |> Dict.toList
+                                |> traverseOrCollect (\( k, value ) -> extract remainingSegments strict (DownKey k :: cursor) value)
+
+                        downstreamValues : Result Error (List Value)
+                        downstreamValues =
+                            dict
+                                |> Dict.toList
+                                |> traverseOrCollect (\( k, value ) -> extract path strict (DownKey k :: cursor) value)
+                                |> Result.map flattenNestedLists
+                    in
+                    combine List.append valuesAtCursor downstreamValues
+                        |> Result.map (Json.Encode.list identity)
+
+                _ ->
+                    Ok (Json.Encode.list identity [])
+
+        (Descendants (Slice { start, maybeEnd, step })) :: remainingSegments ->
+            case ( decodeValue (Json.Decode.array Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
+                ( Ok array, _ ) ->
+                    let
+                        end =
+                            Maybe.withDefault (Array.length array) maybeEnd
+
+                        valuesAtCursor : Result Error (List Value)
+                        valuesAtCursor =
+                            array
+                                |> Array.toIndexedList
+                                |> slice start end step
+                                |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
+                                |> Result.map flattenNestedLists
+
+                        downstreamValues : Result Error (List Value)
+                        downstreamValues =
+                            array
+                                |> Array.toIndexedList
+                                |> traverseOrCollect (\( i, value ) -> extract path strict (DownIndex i :: cursor) value)
+                                |> Result.map flattenNestedLists
+                    in
+                    combine List.append valuesAtCursor downstreamValues
+                        |> Result.map (Json.Encode.list identity)
+
+                ( _, Ok dict ) ->
+                    dict
+                        |> Dict.toList
+                        |> traverseOrCollect (\( k, value ) -> extract path strict (DownKey k :: cursor) value)
+                        |> Result.map flattenNestedLists
+                        |> Result.map (Json.Encode.list identity)
+
+                _ ->
+                    Ok (Json.Encode.list identity [])
+
+        (Descendants (Indices index indices)) :: remainingSegments ->
+            case ( decodeValue (Json.Decode.array Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
+                ( Ok array, _ ) ->
+                    let
+                        valuesAtCursor : Result Error (List Value)
+                        valuesAtCursor =
+                            (index :: indices)
+                                |> List.filterMap (\i -> Array.get i array |> Maybe.map (Tuple.pair i))
+                                |> traverseOrCollect (\( i, value ) -> extract remainingSegments strict (DownIndex i :: cursor) value)
+                                |> Result.map flattenNestedLists
+
+                        downstreamValues : Result Error (List Value)
+                        downstreamValues =
+                            array
+                                |> Array.toIndexedList
+                                |> traverseOrCollect (\( i, value ) -> extract path strict (DownIndex i :: cursor) value)
+                                |> Result.map flattenNestedLists
+                    in
+                    combine List.append valuesAtCursor downstreamValues
+                        |> Result.map (Json.Encode.list identity)
+
+                ( _, Ok dict ) ->
+                    dict
+                        |> Dict.toList
+                        |> traverseOrCollect (\( k, value ) -> extract path strict (DownKey k :: cursor) value)
+                        |> Result.map flattenNestedLists
+                        |> Result.map (Json.Encode.list identity)
+
+                _ ->
+                    Ok (Json.Encode.list identity [])
+
+        (Descendants (Keys key keys)) :: remainingSegments ->
+            case ( decodeValue (Json.Decode.array Json.Decode.value) json, decodeValue (Json.Decode.dict Json.Decode.value) json ) of
+                ( Ok array, _ ) ->
+                    array
+                        |> Array.toIndexedList
+                        |> traverseOrCollect (\( i, value ) -> extract path strict (DownIndex i :: cursor) value)
+                        |> Result.map flattenNestedLists
+                        |> Result.map (Json.Encode.list identity)
+
+                ( _, Ok dict ) ->
+                    let
+                        valuesAtCursor : Result Error (List Value)
+                        valuesAtCursor =
+                            (key :: keys)
+                                |> List.filterMap (\k -> Dict.get k dict |> Maybe.map (Tuple.pair k))
+                                |> traverseOrCollect (\( k, value ) -> extract remainingSegments strict (DownKey k :: cursor) value)
+                                |> Result.map flattenNestedLists
+
+                        downstreamValues : Result Error (List Value)
+                        downstreamValues =
+                            dict
+                                |> Dict.toList
+                                |> traverseOrCollect (\( k, value ) -> extract path strict (DownKey k :: cursor) value)
+                                |> Result.map flattenNestedLists
+                    in
+                    combine List.append valuesAtCursor downstreamValues
+                        |> Result.map (Json.Encode.list identity)
+
+                _ ->
+                    Ok (Json.Encode.list identity [])
 
 
 toPositiveIndex : Int -> Int -> Int

@@ -1,5 +1,23 @@
 module Utils.ListUtils exposing (..)
 
+import Array
+
+
+collectJustValues : List (Maybe a) -> List a
+collectJustValues list =
+    -- Collects all the Just values in a List of Maybes
+    let
+        f : Maybe a -> List a -> List a
+        f maybe acc =
+            case maybe of
+                Just a ->
+                    a :: acc
+
+                Nothing ->
+                    acc
+    in
+    List.foldr f [] list
+
 
 collectOkValues : List (Result e a) -> List a
 collectOkValues list =
@@ -15,18 +33,6 @@ collectOkValues list =
                     acc
     in
     List.foldr f [] list
-
-
-traverseMaybe : (a -> Maybe b) -> List a -> Maybe (List b)
-traverseMaybe f list =
-    -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
-    List.map f list |> sequenceMaybe
-
-
-traverseResult : (a -> Result e b) -> List a -> Result e (List b)
-traverseResult f list =
-    -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
-    List.map f list |> sequenceResult
 
 
 sequenceMaybe : List (Maybe a) -> Maybe (List a)
@@ -65,3 +71,51 @@ sequenceResult list =
                     loop (a :: acc) nextRem
     in
     loop [] list
+
+
+slice : Int -> Int -> Int -> List a -> List a
+slice start end step list =
+    let
+        posStep =
+            if step < 0 then
+                -1 * step
+
+            else
+                step
+
+        enforceStep : Int -> a -> Maybe a
+        enforceStep i a =
+            if modBy posStep i == 0 then
+                Just a
+
+            else
+                Nothing
+
+        maybeReverse : List a -> List a
+        maybeReverse lst =
+            -- A negative step value requires reversing the sliced values
+            if step < 0 then
+                List.reverse lst
+
+            else
+                lst
+    in
+    list
+        |> List.indexedMap enforceStep
+        |> Array.fromList
+        |> Array.slice start end
+        |> Array.toList
+        |> collectJustValues
+        |> maybeReverse
+
+
+traverseMaybe : (a -> Maybe b) -> List a -> Maybe (List b)
+traverseMaybe f list =
+    -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
+    List.map f list |> sequenceMaybe
+
+
+traverseResult : (a -> Result e b) -> List a -> Result e (List b)
+traverseResult f list =
+    -- Inspired by the traverse method on https://typelevel.org/cats/api/cats/Traverse.html
+    List.map f list |> sequenceResult

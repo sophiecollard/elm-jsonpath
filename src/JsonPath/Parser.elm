@@ -6,7 +6,7 @@ module JsonPath.Parser exposing (path)
 
 -}
 
-import JsonPath exposing (Path, Selector(..))
+import JsonPath exposing (Path, Segment(..), Selector(..))
 import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, end, getChompedString, int, oneOf, sequence, spaces, succeed, symbol)
 
 
@@ -15,9 +15,8 @@ import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, e
 path : Parser Path
 path =
     succeed identity
-        |. symbol "$"
         |= sequence
-            { start = ""
+            { start = "$"
             , separator = ""
             , end = ""
             , item = segment
@@ -27,25 +26,42 @@ path =
         |. end
 
 
-segment : Parser Selector
+segment : Parser Segment
 segment =
     oneOf
-        [ bracketSegment
-        , dotSegment
+        [ descendantsBracketNotation
+        , descendantsDotNotation
+        , childrenBracketNotation
+        , childrenDotNotation
         ]
 
 
-bracketSegment : Parser Selector
-bracketSegment =
-    succeed identity
+descendantsBracketNotation : Parser Segment
+descendantsBracketNotation =
+    succeed Descendants
+        |. symbol "..["
+        |= selector
+        |. symbol "]"
+
+
+descendantsDotNotation : Parser Segment
+descendantsDotNotation =
+    succeed Descendants
+        |. symbol ".."
+        |= selector
+
+
+childrenBracketNotation : Parser Segment
+childrenBracketNotation =
+    succeed Children
         |. symbol "["
         |= selector
         |. symbol "]"
 
 
-dotSegment : Parser Selector
-dotSegment =
-    succeed identity
+childrenDotNotation : Parser Segment
+childrenDotNotation =
+    succeed Children
         |. symbol "."
         |= selector
 

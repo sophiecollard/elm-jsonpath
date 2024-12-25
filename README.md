@@ -87,11 +87,12 @@ This package is a work in progress and does not yet support the full [JSONPath s
 
 ### Segments
 
-| Segment         | Syntax | Example                         | Supported |
-| --------------- | ------ | ------------------------------- | --------- |
-| Child           | `.`    | `$.store.book.0.author`         | ✅        |
-| Children        | `[]`   | `$.store.book[0][author,title]` | ✅        |
-| All descendants | `..`   | `$.store..price`                | ❌        |
+| Segment     | Syntax | Example                         | Supported |
+| ----------- | ------ | ------------------------------- | --------- |
+| Children    | `.`    | `$.store.book.0.author`         | ✅        |
+| Children    | `[]`   | `$.store.book[0][author,title]` | ✅        |
+| Descendants | `..`   | `$.store..price`                | ✅        |
+| Descendants | `..[]` | `$.store..[author,title]`       | ✅        |
 
 ### Selectors
 
