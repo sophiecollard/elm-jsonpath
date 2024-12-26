@@ -38,6 +38,14 @@ The `JsonPath.Extractor.run` function takes 3 arguments:
   2. A `strict` flag of type `Bool`
   3. A value of type `Json.Decode.Value`
 
+Remember that you can parse a raw JSON `String` into a `Json.Decode.Value` using `Json.Decode.decodeString`:
+
+```elm
+parseJson : String -> Result Json.Decode.Error Json.Decode.Value
+parseJson string =
+    Json.Decode.decodeString Json.Decode.value string
+```
+
 #### `strict` flag
 
 The best way to understand how the `strict` flag works is with an example, using the [raw](docs/sample.json) or [parsed](docs/Sample.elm) JSON sample in the [docs](docs/) folder.
