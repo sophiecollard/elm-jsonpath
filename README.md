@@ -4,6 +4,10 @@
 
 A [partial](#status) implementation of the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535) in Elm.
 
+## Live demo
+
+Before adding this package to your project, you can try out the latest version [here](https://jsonpath-demo.lon1.cdn.digitaloceanspaces.com/index.html).
+
 ## Installation
 
 ```sh
