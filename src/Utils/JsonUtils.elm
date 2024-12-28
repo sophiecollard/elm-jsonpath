@@ -1,7 +1,7 @@
 module Utils.JsonUtils exposing (..)
 
 import Json.Decode exposing (Value, decodeValue)
-import JsonPath exposing (Cursor, Error(..))
+import JsonPath.Error exposing (Cursor, Error(..))
 import Utils.ListUtils exposing (traverseMaybe)
 
 

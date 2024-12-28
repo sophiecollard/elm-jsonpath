@@ -1,8 +1,7 @@
 module JsonPath.ParserSpec exposing (..)
 
 import Expect exposing (equal)
-import JsonPath exposing (Segment(..), Selector(..))
-import JsonPath.Parser exposing (path)
+import JsonPath.Parser exposing (Segment(..), Selector(..), path)
 import Parser exposing (run)
 import Test exposing (..)
 

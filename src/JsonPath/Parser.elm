@@ -1,17 +1,30 @@
-module JsonPath.Parser exposing (path)
+module JsonPath.Parser exposing (Path, Segment(..), Selector(..), path)
 
-{-| The `Parser` module exposes a `Parser Path` instance which allows parsing a path from a `String`.
-
-@docs path
-
--}
-
-import JsonPath exposing (Path, Segment(..), Selector(..))
 import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, end, getChompedString, int, oneOf, sequence, spaces, succeed, symbol)
 
 
-{-| Allows parsing a path from a `String`.
+{-| A JSON `Path` is made up of a list of `Segment`s.
 -}
+type alias Path =
+    List Segment
+
+
+{-| A `Segment` selects `Children` or `Descendants` using a `Selector`.
+-}
+type Segment
+    = Children Selector
+    | Descendants Selector
+
+
+{-| A JSON path `Selector`, as described in the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535#name-selectors).
+-}
+type Selector
+    = Wildcard
+    | Slice { start : Int, maybeEnd : Maybe Int, step : Int }
+    | Indices Int (List Int)
+    | Keys String (List String)
+
+
 path : Parser Path
 path =
     succeed identity

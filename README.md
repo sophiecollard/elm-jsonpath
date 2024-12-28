@@ -19,20 +19,18 @@ elm install sophiecollard/jsonpath
 ```elm
 import Json.Decode
 import JsonPath
-import JsonPath.Extractor
+import JsonPath.Error exposing (Error)
 
 sampleJson : Json.Decode.Value
 sampleJson =
     ... -- Your JSON here. See the sampleJson value in docs/Sample.elm for instance.
 
-extractedJson : Result JsonPath.Error Json.Decode.Value
+extractedJson : Result Error Json.Decode.Value
 extractedJson =
-    JsonPath.Extractor.run
-        "$.store.book[*].author"
-        sampleJson
+    JsonPath.run "$.store.book[*].author" sampleJson
 ```
 
-The `JsonPath.Extractor` module exposes `run` and `runStrict` functions, both of which take 2 arguments:
+The `JsonPath` module exposes `run` and `runStrict` functions, both of which take 2 arguments:
   1. A `String` representing a JSONPath expression
   2. A value of type `Json.Decode.Value`
 
@@ -51,21 +49,21 @@ The distinction between `run` and `runStrict` is best understood with an example
 With `runStrict`, attempts to extract the elements at `$.store.book[*].isbn` will fail because the first two books do not have an `isbn` key:
 
 ```elm
-JsonPath.Extractor.runStrict "$.store.book[*].isbn" sampleJson ==
+JsonPath.runStrict "$.store.book[*].isbn" sampleJson ==
     Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "isbn")
 ```
 
 With `run` however, entries missing the `isbn` key are ignored and the ISBNs of the last two books returned:
 
 ```elm
-JsonPath.Extractor.run "$.store.book[*].isbn" sampleJson ==
+JsonPath.run "$.store.book[*].isbn" sampleJson ==
     Ok (Json.Encode.list Json.Encode.string [ "0-553-21311-3", "0-395-19395-8" ])
 ```
 
 Note that this only works with JSONPath expressions which return a list of results. With expressions which return exactly one result, both functions will yield an error if an index or key is missing.
 
 ```elm
-JsonPath.Extractor.run "$.store.book[5]" sampleJson ==
+JsonPath.run "$.store.book[5]" sampleJson ==
     (Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5))
 ```
 
