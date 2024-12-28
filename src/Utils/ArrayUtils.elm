@@ -1,7 +1,7 @@
 module Utils.ArrayUtils exposing (..)
 
 import Array exposing (Array)
-import JsonPath exposing (Cursor, Error(..))
+import JsonPath.Error exposing (Cursor, Error(..))
 
 
 getElementAt : Array a -> Cursor -> Int -> Result Error a
