@@ -1,6 +1,7 @@
 module JsonPath exposing
     ( Path, Selector(..)
     , Error(..), Cursor, CursorOp(..)
+    , Segment(..)
     )
 
 {-|
@@ -20,10 +21,17 @@ module JsonPath exposing
 import Parser
 
 
-{-| A JSON `Path` is made up of a list of `Selector`s.
+{-| A JSON `Path` is made up of a list of `Segment`s.
 -}
 type alias Path =
-    List Selector
+    List Segment
+
+
+{-| A `Segment` selects `Children` or `Descendants` using a `Selector`.
+-}
+type Segment
+    = Children Selector
+    | Descendants Selector
 
 
 {-| A JSON path `Selector`, as described in the [JSONPath specification](https://www.rfc-editor.org/rfc/rfc9535#name-selectors).

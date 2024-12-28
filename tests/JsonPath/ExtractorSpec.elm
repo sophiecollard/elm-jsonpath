@@ -34,6 +34,48 @@ suite =
                                     ]
                                 )
                             )
+                , test "$.store.book..[*]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store.book..[*]" False sampleJson)
+                            (Ok
+                                (Json.Encode.list identity
+                                    [ book0
+                                    , book1
+                                    , book2
+                                    , book3
+                                    , Json.Encode.string "Nigel Rees"
+                                    , Json.Encode.string "reference"
+                                    , Json.Encode.float 8.95
+                                    , Json.Encode.string "Sayings of the Century"
+                                    , Json.Encode.string "Evelyn Waugh"
+                                    , Json.Encode.string "fiction"
+                                    , Json.Encode.float 12.99
+                                    , Json.Encode.string "Sword of Honour"
+                                    , Json.Encode.string "Herman Melville"
+                                    , Json.Encode.string "fiction"
+                                    , Json.Encode.string "0-553-21311-3"
+                                    , Json.Encode.float 8.99
+                                    , Json.Encode.string "Moby Dick"
+                                    , Json.Encode.string "J. R. R. Tolkien"
+                                    , Json.Encode.string "fiction"
+                                    , Json.Encode.string "0-395-19395-8"
+                                    , Json.Encode.float 22.99
+                                    , Json.Encode.string "The Lord of the Rings"
+                                    ]
+                                )
+                            )
+                , test "$.store..[*].author" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..[*].author" False sampleJson)
+                            (Ok
+                                (Json.Encode.list Json.Encode.string
+                                    [ "Nigel Rees"
+                                    , "Evelyn Waugh"
+                                    , "Herman Melville"
+                                    , "J. R. R. Tolkien"
+                                    ]
+                                )
+                            )
                 ]
             , describe "should extract the elements in a path comprising a slice selector"
                 [ test "$.store.book[1:3]" <|
@@ -76,8 +118,12 @@ suite =
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[::-2].author" False sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Herman Melville", "Nigel Rees" ]))
+                , test "$.store..[::-2].author" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..[::-2].author" False sampleJson)
+                            (Ok (Json.Encode.list Json.Encode.string [ "Herman Melville", "Nigel Rees" ]))
                 ]
-            , describe "should extract the elements in a path comprising an index selector with a single value"
+            , describe "should extract the elements in a path comprising an index selector"
                 [ test "$.store.book[1]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1]" False sampleJson)
@@ -86,9 +132,7 @@ suite =
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2].author" False sampleJson)
                             (Ok (Json.Encode.string "Herman Melville"))
-                ]
-            , describe "should extract the elements in a path comprising an index selector with multiple values"
-                [ test "$.store.book[1,3]" <|
+                , test "$.store.book[1,3]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1,3]" False sampleJson)
                             (Ok (Json.Encode.list identity [ book1, book3 ]))
@@ -96,8 +140,16 @@ suite =
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[-2,-1].title" False sampleJson)
                             (Ok (Json.Encode.list Json.Encode.string [ "Moby Dick", "The Lord of the Rings" ]))
+                , test "$.store..[0]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..[0]" False sampleJson)
+                            (Ok (Json.Encode.list identity [ book0 ]))
+                , test "$.store..[1,2,5].title" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..[1,2,5].title" False sampleJson)
+                            (Ok (Json.Encode.list Json.Encode.string [ "Sword of Honour", "Moby Dick" ]))
                 ]
-            , describe "should extract the elements in a path comprising a key selector with multiple values"
+            , describe "should extract the elements in a path comprising a key selector"
                 [ test "$.store.book[1][author,title]" <|
                     \_ ->
                         equal (JsonPath.Extractor.run "$.store.book[1][author,title]" False sampleJson)
@@ -111,6 +163,45 @@ suite =
                                     , "Moby Dick"
                                     , "J. R. R. Tolkien"
                                     , "The Lord of the Rings"
+                                    ]
+                                )
+                            )
+                , test "$.store..author" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..author" False sampleJson)
+                            (Ok
+                                (Json.Encode.list Json.Encode.string
+                                    [ "Nigel Rees"
+                                    , "Evelyn Waugh"
+                                    , "Herman Melville"
+                                    , "J. R. R. Tolkien"
+                                    ]
+                                )
+                            )
+                , test "$.store..price" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..price" False sampleJson)
+                            (Ok
+                                (Json.Encode.list Json.Encode.float
+                                    [ 19.95
+                                    , 8.95
+                                    , 12.99
+                                    , 8.99
+                                    , 22.99
+                                    ]
+                                )
+                            )
+                , test "$.store..[title,isbn]" <|
+                    \_ ->
+                        equal (JsonPath.Extractor.run "$.store..[title,isbn]" False sampleJson)
+                            (Ok
+                                (Json.Encode.list Json.Encode.string
+                                    [ "Sayings of the Century"
+                                    , "Sword of Honour"
+                                    , "Moby Dick"
+                                    , "0-553-21311-3"
+                                    , "The Lord of the Rings"
+                                    , "0-395-19395-8"
                                     ]
                                 )
                             )
