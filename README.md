@@ -29,16 +29,14 @@ extractedJson : Result JsonPath.Error Json.Decode.Value
 extractedJson =
     JsonPath.Extractor.run
         "$.store.book[*].author"
-        False
         sampleJson
 ```
 
-The `JsonPath.Extractor.run` function takes 3 arguments:
+The `JsonPath.Extractor` module exposes `run` and `runStrict` functions, both of which take 2 arguments:
   1. A `String` representing a JSONPath expression
-  2. A `strict` flag of type `Bool`
-  3. A value of type `Json.Decode.Value`
+  2. A value of type `Json.Decode.Value`
 
-Remember that you can parse a raw JSON `String` into a `Json.Decode.Value` using `Json.Decode.decodeString`:
+Remember that you can parse a raw JSON `String` into a `Json.Decode.Value` like this:
 
 ```elm
 parseJson : String -> Result Json.Decode.Error Json.Decode.Value
@@ -46,31 +44,28 @@ parseJson string =
     Json.Decode.decodeString Json.Decode.value string
 ```
 
-#### `strict` flag
+### `run` vs `runStrict`
 
-The best way to understand how the `strict` flag works is with an example, using the [raw](docs/sample.json) or [parsed](docs/Sample.elm) JSON sample in the [docs](docs/) folder.
+The distinction between `run` and `runStrict` is best understood with an example, using the [raw](docs/sample.json) or [parsed](docs/Sample.elm) JSON sample in the [docs](docs/) folder.
 
-With `strict = True`, attempts to extract the elements at `$.store.book[*].isbn` will fail because the first two books do not have an `isbn` key:
+With `runStrict`, attempts to extract the elements at `$.store.book[*].isbn` will fail because the first two books do not have an `isbn` key:
 
 ```elm
-JsonPath.Extractor.run "$.store.book[*].isbn" True sampleJson ==
+JsonPath.Extractor.runStrict "$.store.book[*].isbn" sampleJson ==
     Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "isbn")
 ```
 
-With `strict = False` however, entries missing the `isbn` key are ignored and the ISBNs of the last two books returned:
+With `run` however, entries missing the `isbn` key are ignored and the ISBNs of the last two books returned:
 
 ```elm
-JsonPath.Extractor.run "$.store.book[*].isbn" False sampleJson ==
+JsonPath.Extractor.run "$.store.book[*].isbn" sampleJson ==
     Ok (Json.Encode.list Json.Encode.string [ "0-553-21311-3", "0-395-19395-8" ])
 ```
 
-Note that this only works with JSONPath expressions which return a list of results. With expressions which return exactly one result, a missing index or key will yield an error, regardless of the `strict` flag's value.
+Note that this only works with JSONPath expressions which return a list of results. With expressions which return exactly one result, both functions will yield an error if an index or key is missing.
 
 ```elm
-JsonPath.Extractor.run "$.store[*][5]" False sampleJson ==
-    (Ok (Json.Encode.list identity []))
-
-JsonPath.Extractor.run "$.store.book[5]" False sampleJson ==
+JsonPath.Extractor.run "$.store.book[5]" sampleJson ==
     (Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5))
 ```
 

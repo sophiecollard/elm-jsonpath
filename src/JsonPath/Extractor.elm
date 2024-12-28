@@ -1,9 +1,11 @@
-module JsonPath.Extractor exposing (run)
+module JsonPath.Extractor exposing (run, runStrict)
 
-{-| The `Extractor` module exposes a single `run` method which attempts to extract the JSON `Value` at the
+{-| The `Extractor` module exposes `run` and `runStrict` functions which attempt to extract the JSON `Value` at the
 specified path.
 
-@docs run
+All examples below assume the `sampleJson` value is the one [included in the docs](https://github.com/sophiecollard/jsonpath/blob/main/docs/Sample.elm).
+
+@docs run, runStrict
 
 -}
 
@@ -22,16 +24,37 @@ import Utils.ResultUtils exposing (combine)
 
 {-| Attempts to extract the JSON `Value` at the specified path.
 
-    run "$.foo[0]" False (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Ok (Json.Encode.string "bar")
+    run "$.store.book[3].author" sampleJson == Ok (Json.Encode.string "J. R. R. Tolkien")
 
-    run "$.foo.bar" False (Json.Encode.object [ ( "foo", Json.Encode.list Json.Encode.string [ "bar", "baz" ] ) ]) == Err (KeyNotFound [ DownKey "foo" ] "bar")
+    run "$.store.book[5].author" sampleJson == Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5)
+
+    run "$.store.book[*].isbn" sampleJson == Ok (Json.Encode.list Json.Encode.string [ "0-553-21311-3", "0-395-19395-8" ])
 
 -}
-run : String -> Bool -> Value -> Result Error Value
-run rawPath strict json =
+run : String -> Value -> Result Error Value
+run rawPath json =
     case Parser.run path rawPath of
         Ok path ->
-            extract path strict [] json
+            extract path False [] json
+
+        Err err ->
+            Err (PathParsingError err)
+
+
+{-| Attempts to extract the JSON `Value` at the specified path.
+
+    runStrict "$.store.book[3].author" sampleJson == Ok (Json.Encode.string "J. R. R. Tolkien")
+
+    runStrict "$.store.book[5].author" sampleJson == Err (IndexNotFound [ DownKey "book", DownKey "store" ] 5)
+
+    runStrict "$.store.book[*].isbn" sampleJson == Err (KeyNotFound [ DownIndex 0, DownKey "book", DownKey "store" ] "isbn")
+
+-}
+runStrict : String -> Value -> Result Error Value
+runStrict rawPath json =
+    case Parser.run path rawPath of
+        Ok path ->
+            extract path True [] json
 
         Err err ->
             Err (PathParsingError err)
