@@ -9,7 +9,7 @@ module JsonPath exposing
 
 # Type and Constructors
 
-@docs Path, Selector
+@docs Path, Segment, Selector
 
 
 # Error Reporting
