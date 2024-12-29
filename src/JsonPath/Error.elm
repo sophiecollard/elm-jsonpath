@@ -1,4 +1,7 @@
-module JsonPath.Error exposing (Error(..), Cursor, CursorOp(..))
+module JsonPath.Error exposing
+    ( Error(..), Cursor, CursorOp(..)
+    , toPath
+    )
 
 {-|
 
@@ -6,6 +9,11 @@ module JsonPath.Error exposing (Error(..), Cursor, CursorOp(..))
 # Type and Constructors
 
 @docs Error, Cursor, CursorOp
+
+
+# Functions
+
+@docs toPath
 
 -}
 
@@ -34,3 +42,22 @@ type alias Cursor =
 type CursorOp
     = DownIndex Int
     | DownKey String
+
+
+{-| Returns the path expression for a given `Cursor`.
+-}
+toPath : Cursor -> String
+toPath cursor =
+    let
+        f : CursorOp -> String -> String
+        f op acc =
+            case op of
+                DownIndex index ->
+                    "." ++ String.fromInt index ++ acc
+
+                DownKey key ->
+                    "." ++ key ++ acc
+    in
+    cursor
+        |> List.foldl f ""
+        |> (++) "$"
