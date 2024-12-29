@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build:
-    name: Run unit tests
+    name: Check formatting and run unit tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -27,7 +27,11 @@ jobs:
       with:
         node-version: 20.0.0
         cache: ''
-    - name: Install elm and elm-test
-      run: npm install --location=global elm@latest-0.19.1 && npm install --location=global elm-test@0.19.1-revision12
+    - name: Install elm and elm-format
+      run: npm install -g elm@latest-0.19.1 && npm install -g elm-format
+    - name: Check code formatting
+      run: elm-format --validate src/
+    - name: Install elm-test
+      run: npm install -g elm-test@0.19.1-revision12
     - name: Run unit tests
       run: elm-test
